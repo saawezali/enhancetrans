@@ -1,0 +1,120 @@
+import { useMemo, useState } from "react";
+import { enhanceAudio, pickAudioFile } from "./tauri";
+
+type Status = "idle" | "running" | "success" | "error";
+
+function playCompletionCue(): void {
+  const context = new AudioContext();
+  const oscillator = context.createOscillator();
+  const gain = context.createGain();
+
+  oscillator.type = "sine";
+  oscillator.frequency.value = 880;
+  gain.gain.setValueAtTime(0.0001, context.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.18, context.currentTime + 0.015);
+  gain.gain.exponentialRampToValueAtTime(0.0001, context.currentTime + 0.26);
+
+  oscillator.connect(gain);
+  gain.connect(context.destination);
+  oscillator.start();
+  oscillator.stop(context.currentTime + 0.28);
+
+  setTimeout(() => {
+    void context.close();
+  }, 350);
+}
+
+export default function App() {
+  const [selectedFile, setSelectedFile] = useState<string | null>(null);
+  const [gainDb, setGainDb] = useState(0);
+  const [status, setStatus] = useState<Status>("idle");
+  const [resultPath, setResultPath] = useState<string>("");
+  const [errorMessage, setErrorMessage] = useState<string>("");
+
+  const statusMessage = useMemo(() => {
+    if (status === "running") {
+      return "Enhancing audio locally...";
+    }
+    if (status === "success") {
+      return `Done. Saved to: ${resultPath}`;
+    }
+    if (status === "error") {
+      return errorMessage || "Enhancement failed.";
+    }
+    return "Select an audio file to begin.";
+  }, [status, resultPath, errorMessage]);
+
+  const canEnhance = Boolean(selectedFile) && status !== "running";
+
+  async function onPickFile(): Promise<void> {
+    try {
+      const filePath = await pickAudioFile();
+      if (!filePath) {
+        return;
+      }
+      setSelectedFile(filePath);
+      setStatus("idle");
+      setResultPath("");
+      setErrorMessage("");
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : "Could not open file picker.");
+    }
+  }
+
+  async function onEnhance(): Promise<void> {
+    if (!selectedFile) {
+      return;
+    }
+
+    setStatus("running");
+    setResultPath("");
+    setErrorMessage("");
+
+    try {
+      const result = await enhanceAudio(selectedFile, gainDb);
+      setResultPath(result.output_path);
+      setStatus("success");
+      playCompletionCue();
+    } catch (error) {
+      setStatus("error");
+      setErrorMessage(error instanceof Error ? error.message : "Enhancement failed.");
+    }
+  }
+
+  return (
+    <main className="shell">
+      <section className="card">
+        <h1>EnhanceTrans</h1>
+        <p className="subtitle">Offline audio enhancement with adjustable gain.</p>
+
+        <div className="row">
+          <button type="button" className="btn" onClick={onPickFile} disabled={status === "running"}>
+            Select Audio File
+          </button>
+          <span className="path">{selectedFile ?? "No file selected"}</span>
+        </div>
+
+        <div className="slider-wrap">
+          <label htmlFor="gain">Gain ({gainDb.toFixed(1)} dB)</label>
+          <input
+            id="gain"
+            type="range"
+            min={-24}
+            max={24}
+            step={0.5}
+            value={gainDb}
+            onChange={(event: { target: { value: string } }) => setGainDb(Number(event.target.value))}
+            disabled={status === "running"}
+          />
+        </div>
+
+        <button type="button" className="btn btn-primary" onClick={onEnhance} disabled={!canEnhance}>
+          {status === "running" ? "Enhancing..." : "Enhance & Save"}
+        </button>
+
+        <p className={`status status-${status}`}>{statusMessage}</p>
+      </section>
+    </main>
+  );
+}
