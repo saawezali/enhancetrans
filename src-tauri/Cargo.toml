@@ -1,6 +1,6 @@
 [package]
 name = "enhancetrans"
-version = "0.1.0"
+version = "0.1.1"
 description = "Offline audio enhancer"
 authors = ["EnhanceTrans"]
 license = "MIT"
@@ -20,3 +20,6 @@ thiserror = "1"
 [features]
 default = ["custom-protocol"]
 custom-protocol = ["tauri/custom-protocol"]
+
+[patch.crates-io]
+wry = { path = "../vendor/wry" }

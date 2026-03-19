@@ -8,7 +8,7 @@
   },
   "package": {
     "productName": "EnhanceTrans",
-    "version": "0.1.0"
+    "version": "0.1.1"
   },
   "tauri": {
     "allowlist": {
@@ -24,7 +24,7 @@
       "active": true,
       "targets": ["msi", "nsis"],
       "identifier": "com.enhancetrans.app",
-      "icon": []
+      "icon": ["icons/icon.ico", "icons/icon.png"]
     },
     "windows": [
       {

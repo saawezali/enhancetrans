@@ -3,6 +3,22 @@ import { enhanceAudio, pickAudioFile } from "./tauri";
 
 type Status = "idle" | "running" | "success" | "error";
 
+function getErrorMessage(error: unknown, fallback: string): string {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  if (typeof error === "string" && error.trim().length > 0) {
+    return error;
+  }
+  if (error && typeof error === "object" && "message" in error) {
+    const message = (error as { message?: unknown }).message;
+    if (typeof message === "string" && message.trim().length > 0) {
+      return message;
+    }
+  }
+  return fallback;
+}
+
 function playCompletionCue(): void {
   const context = new AudioContext();
   const oscillator = context.createOscillator();
@@ -58,7 +74,7 @@ export default function App() {
       setErrorMessage("");
     } catch (error) {
       setStatus("error");
-      setErrorMessage(error instanceof Error ? error.message : "Could not open file picker.");
+      setErrorMessage(getErrorMessage(error, "Could not open file picker."));
     }
   }
 
@@ -78,7 +94,7 @@ export default function App() {
       playCompletionCue();
     } catch (error) {
       setStatus("error");
-      setErrorMessage(error instanceof Error ? error.message : "Enhancement failed.");
+      setErrorMessage(getErrorMessage(error, "Enhancement failed."));
     }
   }
 
@@ -86,7 +102,7 @@ export default function App() {
     <main className="shell">
       <section className="card">
         <h1>EnhanceTrans</h1>
-        <p className="subtitle">Offline audio enhancement with adjustable gain.</p>
+        <p className="subtitle">please work ffs</p>
 
         <div className="row">
           <button type="button" className="btn" onClick={onPickFile} disabled={status === "running"}>
