@@ -4,7 +4,9 @@ EnhanceTrans is a local web interface desktop app for offline audio enhancement.
 
 ## Current implementation
 
-- Local UI with file selection.
+- Separate File Mode and Live Mode views.
+- File Mode for offline file enhancement and export.
+- Live Mode for real-time microphone processing and routing.
 - Gain slider from -24 dB to +24 dB.
 - Multi-select noise presets with per-preset strength sliders:
   - Voice Focused
@@ -16,6 +18,30 @@ EnhanceTrans is a local web interface desktop app for offline audio enhancement.
 - Local processing command that runs FFmpeg with a staged filter chain.
 - Output saved in the same folder with default prefix `enhanced_`.
 - Completion cue sound on successful enhancement.
+
+### Live mode
+
+Live mode captures microphone input and applies the current effect settings in real time.
+
+- Uses low-latency Web Audio processing inside the app
+- Reuses the same preset blending, safety cap, brightness, and gain controls
+- Includes live microphone input selection, output-device selection, and start/stop control
+
+Important:
+
+- To make Discord and similar apps detect processed audio as a microphone, you must use a virtual audio cable device (for example VB-CABLE).
+- In Live Mode, choose the virtual cable INPUT as the app output device.
+- Then in Discord (or another app), select the matching virtual cable OUTPUT as microphone input.
+- Without a virtual cable driver, apps will not detect the processed stream as a standalone mic device.
+
+### Discord routing (Windows)
+
+1. Install a virtual audio cable (for example VB-CABLE).
+2. Open EnhanceTrans Live Mode and select your microphone input device.
+3. In EnhanceTrans Live Mode, select the virtual cable INPUT as output device.
+4. Start Live FX.
+5. In Discord voice settings, choose the matching virtual cable OUTPUT as microphone input.
+6. Keep EnhanceTrans running while speaking.
 
 ### Processing pipeline
 
