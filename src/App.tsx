@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { enhanceAudio, pickAudioFile } from "./tauri";
 
 type Status = "idle" | "running" | "success" | "error";
@@ -20,8 +20,7 @@ function getErrorMessage(error: unknown, fallback: string): string {
   return fallback;
 }
 
-function playCompletionCue(): void {
-  const context = new AudioContext();
+function playCompletionCue(context: AudioContext): void {
   const oscillator = context.createOscillator();
   const gain = context.createGain();
 
@@ -35,10 +34,6 @@ function playCompletionCue(): void {
   gain.connect(context.destination);
   oscillator.start();
   oscillator.stop(context.currentTime + 0.28);
-
-  setTimeout(() => {
-    void context.close();
-  }, 350);
 }
 
 export default function App() {
@@ -50,6 +45,24 @@ export default function App() {
   const [status, setStatus] = useState<Status>("idle");
   const [resultPath, setResultPath] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
+  const completionAudioContextRef = useRef<AudioContext | null>(null);
+
+  async function ensureCompletionAudioContext(): Promise<AudioContext | null> {
+    try {
+      const existing = completionAudioContextRef.current;
+      const context = existing && existing.state !== "closed" ? existing : new AudioContext();
+      completionAudioContextRef.current = context;
+
+      // Resume during user interaction so playback remains allowed after async work finishes.
+      if (context.state === "suspended") {
+        await context.resume();
+      }
+
+      return context;
+    } catch {
+      return null;
+    }
+  }
 
   const statusMessage = useMemo(() => {
     if (status === "running") {
@@ -87,6 +100,8 @@ export default function App() {
       return;
     }
 
+    await ensureCompletionAudioContext();
+
     setStatus("running");
     setResultPath("");
     setErrorMessage("");
@@ -101,7 +116,10 @@ export default function App() {
       );
       setResultPath(result.output_path);
       setStatus("success");
-      playCompletionCue();
+      const cueContext = completionAudioContextRef.current;
+      if (cueContext) {
+        playCompletionCue(cueContext);
+      }
     } catch (error) {
       setStatus("error");
       setErrorMessage(getErrorMessage(error, "Enhancement failed."));
