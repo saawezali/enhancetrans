@@ -93,6 +93,20 @@ h1 {
   gap: 8px;
 }
 
+.preset-block {
+  margin-top: 16px;
+  padding: 12px;
+  border: 1px solid rgba(18, 32, 43, 0.12);
+  border-radius: 12px;
+  background: rgba(243, 246, 250, 0.65);
+}
+
+.preset-heading {
+  margin: 0;
+  font-weight: 700;
+  color: #1c3448;
+}
+
 .check-row {
   margin-top: 16px;
   display: flex;

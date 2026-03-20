@@ -38,15 +38,27 @@ export async function pickAudioFile(): Promise<string | null> {
 export async function enhanceAudio(
   inputPath: string,
   gainDb: number,
-  noiseReductionStrength: number,
-  noiseProfile: "voice_focused" | "chair_suppress" | "aggressive",
+  voiceFocusedEnabled: boolean,
+  voiceFocusedStrength: number,
+  chairSuppressEnabled: boolean,
+  chairSuppressStrength: number,
+  aggressiveEnabled: boolean,
+  aggressiveStrength: number,
+  maxCombinedNoiseReduction: number,
+  vocalBrightness: number,
   advancedCleanup: boolean
 ): Promise<EnhanceResponse> {
   return invokeTauri<EnhanceResponse>("enhance_audio", {
     inputPath,
     gainDb,
-    noiseReductionStrength,
-    noiseProfile,
+    voiceFocusedEnabled,
+    voiceFocusedStrength,
+    chairSuppressEnabled,
+    chairSuppressStrength,
+    aggressiveEnabled,
+    aggressiveStrength,
+    maxCombinedNoiseReduction,
+    vocalBrightness,
     advancedCleanup
   });
 }

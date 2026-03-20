@@ -6,11 +6,12 @@ EnhanceTrans is a local web interface desktop app for offline audio enhancement.
 
 - Local UI with file selection.
 - Gain slider from -24 dB to +24 dB.
-- Noise Reduction slider from 0% to 100%.
-- Noise Profile selector:
-	- Voice Focused
-	- Chair/Scrape Suppress
-	- Aggressive Cleanup
+- Multi-select noise presets with per-preset strength sliders:
+  - Voice Focused
+  - Chair/Scrape Suppress
+  - Aggressive Cleanup
+- Max Combined Noise Reduction slider (safety cap for overlap protection).
+- Vocal Brightness slider for muffled speech/audio.
 - Advanced Cleanup toggle that adds spectral denoise and a gentle gate.
 - Local processing command that runs FFmpeg with a staged filter chain.
 - Output saved in the same folder with default prefix `enhanced_`.
@@ -22,18 +23,30 @@ EnhanceTrans currently applies filters in this order:
 
 1. Dynamic normalization (`dynaudnorm`)
 2. Optional advanced cleanup (`afftdn` + `agate`) when enabled
-3. Preset-based EQ noise reduction (strength-scaled)
-4. Gain adjustment (`volume`)
+3. Weighted multi-preset EQ noise reduction (strength-scaled and cap-limited)
+4. Optional vocal-brightness EQ (presence + air boost with mild low-mid relief)
+5. Gain adjustment (`volume`)
 
 This design keeps speech intelligibility as the primary goal while reducing hiss, rumble, and intermittent mechanical noise.
 
 ### Suggested settings
 
-- General voice: `Voice Focused` with noise reduction around 25-45%
-- Chair noise and desk movement: `Chair/Scrape Suppress` with noise reduction around 35-55%
-- Very noisy recordings: `Aggressive Cleanup` with noise reduction around 45-65%
+- General voice:
+	- Voice Focused strength: 30-45%
+	- Max Combined Noise Reduction: 70-80%
+	- Vocal Brightness: 20-35%
+- Chair noise and desk movement:
+	- Voice Focused: 20-35%
+	- Chair/Scrape Suppress: 35-55%
+	- Max Combined Noise Reduction: 75-90%
+	- Vocal Brightness: 25-40%
+- Very noisy recordings:
+	- Voice Focused: 20-35%
+	- Aggressive Cleanup: 35-60%
+	- Max Combined Noise Reduction: 85-100%
+	- Vocal Brightness: 30-45%
 
-If voice becomes dull, reduce Noise Reduction by 5-10% before increasing gain.
+If voice becomes harsh or thin, reduce Vocal Brightness by 5-10% and/or lower Aggressive Cleanup strength.
 
 ## Requirements
 
@@ -76,3 +89,4 @@ This produces bundled artifacts in `src-tauri/target/release/bundle`.
 - "All formats" means broad practical support based on FFmpeg capabilities.
 - On processing failure, the app surfaces FFmpeg error output.
 - Advanced Cleanup can reduce transient and room noise further, but very high settings may remove some high-frequency speech detail.
+- Enabling multiple presets is safe because strengths are blended and capped by the Max Combined Noise Reduction slider.

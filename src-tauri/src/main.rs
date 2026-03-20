@@ -9,8 +9,14 @@ use tauri::async_runtime::spawn_blocking;
 async fn enhance_audio(
     input_path: String,
     gain_db: f32,
-    noise_reduction_strength: f32,
-    noise_profile: String,
+    voice_focused_enabled: bool,
+    voice_focused_strength: f32,
+    chair_suppress_enabled: bool,
+    chair_suppress_strength: f32,
+    aggressive_enabled: bool,
+    aggressive_strength: f32,
+    max_combined_noise_reduction: f32,
+    vocal_brightness: f32,
     advanced_cleanup: bool,
 ) -> Result<audio::EnhanceResponse, String> {
     spawn_blocking(move || {
@@ -18,8 +24,14 @@ async fn enhance_audio(
         run_enhancement(
             path.as_path(),
             gain_db,
-            noise_reduction_strength,
-            noise_profile.as_str(),
+            voice_focused_enabled,
+            voice_focused_strength,
+            chair_suppress_enabled,
+            chair_suppress_strength,
+            aggressive_enabled,
+            aggressive_strength,
+            max_combined_noise_reduction,
+            vocal_brightness,
             advanced_cleanup,
         )
             .map_err(|err| err.to_string())

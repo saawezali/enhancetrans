@@ -2,7 +2,9 @@ import { useMemo, useRef, useState } from "react";
 import { enhanceAudio, pickAudioFile } from "./tauri";
 
 type Status = "idle" | "running" | "success" | "error";
-type NoisePreset = "voice_focused" | "chair_suppress" | "aggressive";
+type NoisePresetKey = "voice_focused" | "chair_suppress" | "aggressive";
+type PresetSelectionState = Record<NoisePresetKey, boolean>;
+type PresetStrengthState = Record<NoisePresetKey, number>;
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) {
@@ -39,8 +41,18 @@ function playCompletionCue(context: AudioContext): void {
 export default function App() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [gainDb, setGainDb] = useState(0);
-  const [noiseReductionStrength, setNoiseReductionStrength] = useState(35);
-  const [noisePreset, setNoisePreset] = useState<NoisePreset>("voice_focused");
+  const [presetEnabled, setPresetEnabled] = useState<PresetSelectionState>({
+    voice_focused: true,
+    chair_suppress: false,
+    aggressive: false
+  });
+  const [presetStrength, setPresetStrength] = useState<PresetStrengthState>({
+    voice_focused: 40,
+    chair_suppress: 35,
+    aggressive: 25
+  });
+  const [maxCombinedNoiseReduction, setMaxCombinedNoiseReduction] = useState(80);
+  const [vocalBrightness, setVocalBrightness] = useState(30);
   const [advancedCleanup, setAdvancedCleanup] = useState(true);
   const [status, setStatus] = useState<Status>("idle");
   const [resultPath, setResultPath] = useState<string>("");
@@ -110,8 +122,14 @@ export default function App() {
       const result = await enhanceAudio(
         selectedFile,
         gainDb,
-        noiseReductionStrength,
-        noisePreset,
+        presetEnabled.voice_focused,
+        presetStrength.voice_focused,
+        presetEnabled.chair_suppress,
+        presetStrength.chair_suppress,
+        presetEnabled.aggressive,
+        presetStrength.aggressive,
+        maxCombinedNoiseReduction,
+        vocalBrightness,
         advancedCleanup
       );
       setResultPath(result.output_path);
@@ -153,33 +171,120 @@ export default function App() {
           />
         </div>
 
+        <div className="preset-block">
+          <p className="preset-heading">Noise Presets (multi-select)</p>
+
+          <div className="slider-wrap">
+            <label className="check-row" htmlFor="preset-voice-focused">
+              <input
+                id="preset-voice-focused"
+                type="checkbox"
+                checked={presetEnabled.voice_focused}
+                onChange={(event: { target: { checked: boolean } }) =>
+                  setPresetEnabled((prev) => ({ ...prev, voice_focused: event.target.checked }))
+                }
+                disabled={status === "running"}
+              />
+              <span>Voice Focused</span>
+            </label>
+            <label htmlFor="strength-voice-focused">Strength ({presetStrength.voice_focused}%)</label>
+            <input
+              id="strength-voice-focused"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={presetStrength.voice_focused}
+              onChange={(event: { target: { value: string } }) =>
+                setPresetStrength((prev) => ({ ...prev, voice_focused: Number(event.target.value) }))
+              }
+              disabled={status === "running" || !presetEnabled.voice_focused}
+            />
+          </div>
+
+          <div className="slider-wrap">
+            <label className="check-row" htmlFor="preset-chair-suppress">
+              <input
+                id="preset-chair-suppress"
+                type="checkbox"
+                checked={presetEnabled.chair_suppress}
+                onChange={(event: { target: { checked: boolean } }) =>
+                  setPresetEnabled((prev) => ({ ...prev, chair_suppress: event.target.checked }))
+                }
+                disabled={status === "running"}
+              />
+              <span>Chair/Scrape Suppress</span>
+            </label>
+            <label htmlFor="strength-chair-suppress">Strength ({presetStrength.chair_suppress}%)</label>
+            <input
+              id="strength-chair-suppress"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={presetStrength.chair_suppress}
+              onChange={(event: { target: { value: string } }) =>
+                setPresetStrength((prev) => ({ ...prev, chair_suppress: Number(event.target.value) }))
+              }
+              disabled={status === "running" || !presetEnabled.chair_suppress}
+            />
+          </div>
+
+          <div className="slider-wrap">
+            <label className="check-row" htmlFor="preset-aggressive">
+              <input
+                id="preset-aggressive"
+                type="checkbox"
+                checked={presetEnabled.aggressive}
+                onChange={(event: { target: { checked: boolean } }) =>
+                  setPresetEnabled((prev) => ({ ...prev, aggressive: event.target.checked }))
+                }
+                disabled={status === "running"}
+              />
+              <span>Aggressive Cleanup</span>
+            </label>
+            <label htmlFor="strength-aggressive">Strength ({presetStrength.aggressive}%)</label>
+            <input
+              id="strength-aggressive"
+              type="range"
+              min={0}
+              max={100}
+              step={1}
+              value={presetStrength.aggressive}
+              onChange={(event: { target: { value: string } }) =>
+                setPresetStrength((prev) => ({ ...prev, aggressive: Number(event.target.value) }))
+              }
+              disabled={status === "running" || !presetEnabled.aggressive}
+            />
+          </div>
+        </div>
+
         <div className="slider-wrap">
-          <label htmlFor="noise-reduction">Noise Reduction ({noiseReductionStrength}%)</label>
+          <label htmlFor="max-noise-cap">Max Combined Noise Reduction ({maxCombinedNoiseReduction}%)</label>
           <input
-            id="noise-reduction"
+            id="max-noise-cap"
             type="range"
-            min={0}
+            min={20}
             max={100}
             step={1}
-            value={noiseReductionStrength}
-            onChange={(event: { target: { value: string } }) => setNoiseReductionStrength(Number(event.target.value))}
+            value={maxCombinedNoiseReduction}
+            onChange={(event: { target: { value: string } }) => setMaxCombinedNoiseReduction(Number(event.target.value))}
             disabled={status === "running"}
           />
         </div>
 
         <div className="slider-wrap">
-          <label htmlFor="noise-preset">Noise Profile</label>
-          <select
-            id="noise-preset"
-            className="select"
-            value={noisePreset}
-            onChange={(event: { target: { value: string } }) => setNoisePreset(event.target.value as NoisePreset)}
+          <label htmlFor="vocal-brightness">Vocal Brightness ({vocalBrightness}%)</label>
+          <input
+            id="vocal-brightness"
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={vocalBrightness}
+            onChange={(event: { target: { value: string } }) => setVocalBrightness(Number(event.target.value))}
             disabled={status === "running"}
-          >
-            <option value="voice_focused">Voice Focused</option>
-            <option value="chair_suppress">Chair/Scrape Suppress</option>
-            <option value="aggressive">Aggressive Cleanup</option>
-          </select>
+          />
         </div>
 
         <label className="check-row" htmlFor="advanced-cleanup">
