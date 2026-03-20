@@ -6,10 +6,23 @@ use audio::run_enhancement;
 use tauri::async_runtime::spawn_blocking;
 
 #[tauri::command]
-async fn enhance_audio(input_path: String, gain_db: f32) -> Result<audio::EnhanceResponse, String> {
+async fn enhance_audio(
+    input_path: String,
+    gain_db: f32,
+    noise_reduction_strength: f32,
+    noise_profile: String,
+    advanced_cleanup: bool,
+) -> Result<audio::EnhanceResponse, String> {
     spawn_blocking(move || {
         let path = std::path::PathBuf::from(input_path);
-        run_enhancement(path.as_path(), gain_db).map_err(|err| err.to_string())
+        run_enhancement(
+            path.as_path(),
+            gain_db,
+            noise_reduction_strength,
+            noise_profile.as_str(),
+            advanced_cleanup,
+        )
+            .map_err(|err| err.to_string())
     })
     .await
     .map_err(|err| format!("Enhancement worker failed: {err}"))?

@@ -93,8 +93,35 @@ h1 {
   gap: 8px;
 }
 
+.check-row {
+  margin-top: 16px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: #1c3448;
+}
+
+.check-row input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+}
+
 input[type="range"] {
   width: 100%;
+}
+
+.select {
+  width: 100%;
+  border: 1px solid rgba(18, 32, 43, 0.18);
+  border-radius: 10px;
+  padding: 10px 12px;
+  background: #f3f6fa;
+  color: #1c3448;
+  font: inherit;
+}
+
+.select:disabled {
+  opacity: 0.7;
 }
 
 .status {

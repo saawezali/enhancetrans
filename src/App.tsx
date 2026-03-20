@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { enhanceAudio, pickAudioFile } from "./tauri";
 
 type Status = "idle" | "running" | "success" | "error";
+type NoisePreset = "voice_focused" | "chair_suppress" | "aggressive";
 
 function getErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof Error && error.message) {
@@ -43,6 +44,9 @@ function playCompletionCue(): void {
 export default function App() {
   const [selectedFile, setSelectedFile] = useState<string | null>(null);
   const [gainDb, setGainDb] = useState(0);
+  const [noiseReductionStrength, setNoiseReductionStrength] = useState(35);
+  const [noisePreset, setNoisePreset] = useState<NoisePreset>("voice_focused");
+  const [advancedCleanup, setAdvancedCleanup] = useState(true);
   const [status, setStatus] = useState<Status>("idle");
   const [resultPath, setResultPath] = useState<string>("");
   const [errorMessage, setErrorMessage] = useState<string>("");
@@ -88,7 +92,13 @@ export default function App() {
     setErrorMessage("");
 
     try {
-      const result = await enhanceAudio(selectedFile, gainDb);
+      const result = await enhanceAudio(
+        selectedFile,
+        gainDb,
+        noiseReductionStrength,
+        noisePreset,
+        advancedCleanup
+      );
       setResultPath(result.output_path);
       setStatus("success");
       playCompletionCue();
@@ -124,6 +134,46 @@ export default function App() {
             disabled={status === "running"}
           />
         </div>
+
+        <div className="slider-wrap">
+          <label htmlFor="noise-reduction">Noise Reduction ({noiseReductionStrength}%)</label>
+          <input
+            id="noise-reduction"
+            type="range"
+            min={0}
+            max={100}
+            step={1}
+            value={noiseReductionStrength}
+            onChange={(event: { target: { value: string } }) => setNoiseReductionStrength(Number(event.target.value))}
+            disabled={status === "running"}
+          />
+        </div>
+
+        <div className="slider-wrap">
+          <label htmlFor="noise-preset">Noise Profile</label>
+          <select
+            id="noise-preset"
+            className="select"
+            value={noisePreset}
+            onChange={(event: { target: { value: string } }) => setNoisePreset(event.target.value as NoisePreset)}
+            disabled={status === "running"}
+          >
+            <option value="voice_focused">Voice Focused</option>
+            <option value="chair_suppress">Chair/Scrape Suppress</option>
+            <option value="aggressive">Aggressive Cleanup</option>
+          </select>
+        </div>
+
+        <label className="check-row" htmlFor="advanced-cleanup">
+          <input
+            id="advanced-cleanup"
+            type="checkbox"
+            checked={advancedCleanup}
+            onChange={(event: { target: { checked: boolean } }) => setAdvancedCleanup(event.target.checked)}
+            disabled={status === "running"}
+          />
+          <span>Advanced Cleanup (spectral denoise + gentle gate)</span>
+        </label>
 
         <button type="button" className="btn btn-primary" onClick={onEnhance} disabled={!canEnhance}>
           {status === "running" ? "Enhancing..." : "Enhance & Save"}

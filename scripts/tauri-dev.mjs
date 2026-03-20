@@ -1,4 +1,4 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { existsSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
@@ -19,6 +19,26 @@ function prependCargoToPath() {
 }
 
 prependCargoToPath();
+
+function ensureDistExists() {
+  const distDir = path.resolve(process.cwd(), "dist");
+  if (existsSync(distDir)) {
+    return;
+  }
+
+  const npmCmd = process.platform === "win32" ? "npm.cmd" : "npm";
+  const result = spawnSync(npmCmd, ["run", "build"], {
+    stdio: "inherit",
+    env: process.env,
+    shell: process.platform === "win32",
+  });
+
+  if (result.status !== 0) {
+    process.exit(result.status ?? 1);
+  }
+}
+
+ensureDistExists();
 
 const tauriBin = process.platform === "win32" ? "tauri.cmd" : "tauri";
 const child = spawn(tauriBin, ["dev"], {
