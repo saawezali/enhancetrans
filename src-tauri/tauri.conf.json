@@ -1,0 +1,41 @@
+{
+  "$schema": "https://schema.tauri.app/config/1",
+  "build": {
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build",
+    "devPath": "http://localhost:1420",
+    "distDir": "../dist"
+  },
+  "package": {
+    "productName": "EnhanceTrans",
+    "version": "0.1.1"
+  },
+  "tauri": {
+    "allowlist": {
+      "all": false,
+      "dialog": {
+        "open": true
+      },
+      "shell": {
+        "all": false
+      }
+    },
+    "bundle": {
+      "active": true,
+      "targets": ["msi", "nsis"],
+      "identifier": "com.enhancetrans.app",
+      "icon": ["icons/icon.ico", "icons/icon.png"]
+    },
+    "windows": [
+      {
+        "title": "EnhanceTrans",
+        "width": 980,
+        "height": 680,
+        "resizable": true
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  }
+}
